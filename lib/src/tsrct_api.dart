@@ -56,13 +56,37 @@ class TsrctApi {
   }
 
   Future<ApiResponse> postTdoc(String tdoc) async {
-    http.Response response =
-    await http.post(
+    http.Response response = await http.post(
       Uri.parse("$apiEndpoint"),
       body: tdoc,
       encoding: utf8,
     );
-    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    ApiResponse apiResponse = ApiResponse.parse(
+        response.statusCode,
+        ApiResponseType.json,
+        "application/json",
+        response.bodyBytes
+    );
+    return apiResponse;
+  }
+
+  /// post the given json to the provided path
+  /// the path must begin with /, e.g. /path/to/endpoint
+  Future<ApiResponse> postJson(String path, Map<String,dynamic> jsonToPost) async {
+    http.Response response = await http.post(
+        Uri.parse("$apiEndpoint$path"),
+        body: jsonEncode(jsonToPost),
+        encoding: utf8,
+        headers: {
+          "content-type": "application/json"
+        }
+    );
+    ApiResponse apiResponse = ApiResponse.parse(
+        response.statusCode,
+        ApiResponseType.json,
+        "application/json",
+        response.bodyBytes
+    );
     return apiResponse;
   }
 

@@ -7,4 +7,4 @@ export 'src/tsrct_codec_utils.dart';
 export 'src/tsrct_doc.dart';
 export 'src/tsrct_key_actions.dart';
 export 'src/tsrct_operations.dart';
-
+export 'src/tsrct_utils_crypto.dart';

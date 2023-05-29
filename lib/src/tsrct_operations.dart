@@ -2,12 +2,37 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:developer' as dev;
 
+import 'package:intl/intl.dart';
+
 import 'package:pointycastle/src/utils.dart';
 import 'package:pointycastle/export.dart' as pc;
 import 'package:tsrct_dart_lib/src/tsrct_codec_utils.dart';
 import 'package:tsrct_dart_lib/src/tsrct_doc.dart';
+import 'package:pointycastle/src/platform_check/platform_check.dart';
 
 class TsrctCommonOps {
+  static final DateFormat _keyIdDateFormat = DateFormat("yyyyMMddHHmmss");
+  static final DateFormat _tdocDateFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z");
+
+  static String getNowAsTdocDateFormat() {
+    return _tdocDateFormat.format(DateTime.now().toUtc());
+  }
+
+  static String getTimeAsTdocDateFormat(DateTime dateTime) {
+    return _tdocDateFormat.format(dateTime);
+  }
+
+  static String getNowAsKeyIdDateFormat() {
+    return _keyIdDateFormat.format(DateTime.now().toUtc());
+  }
+
+  static String getTimeAsKeyIdDateFormat(DateTime dateTime) {
+    return _keyIdDateFormat.format(dateTime);
+  }
+
+  static int getNonce() {
+    return DateTime.now().toUtc().millisecondsSinceEpoch~/1000;
+  }
 
   /// takes a single jwk entry in the keys jwks to create the public key
   static pc.RSAPublicKey jwkToPublicKey(Map<String,dynamic> jwk) {
@@ -61,6 +86,7 @@ class TsrctCommonOps {
     return null;
   }
 
+  @deprecated
   static Map<String,dynamic> publicKeyToJwk(pc.RSAPublicKey publicKey, String kid, String alg, String use) {
     Map<String,dynamic> publicJwk = {};
     publicJwk["kid"] = kid;
@@ -84,6 +110,9 @@ class TsrctCommonOps {
 
   /// given the signing and encryption public keys, create the jwks key set that
   /// can be embedded in a tdoc
+  /// prefer using [KeyActionsProvider] for the specific platform (e.g. gcp or aws, etc.)
+  /// to get proper alg value setting
+  @deprecated
   static Map<String,dynamic> convertKeySetToJwks(
       String keySetId,
       pc.RSAPublicKey sigKey,
@@ -105,6 +134,14 @@ class TsrctCommonOps {
     return jwks;
   }
 
+  static pc.SecureRandom secureRandom() {
+
+    final secureRandom = pc.SecureRandom('Fortuna')
+      ..seed(pc.KeyParameter(Platform.instance.platformEntropySource().getBytes(32)));
+    return secureRandom;
+  }
+
+
   static ValidationResult validateTdoc(TsrctDoc tsrctDoc, TsrctDoc keyTdoc) {
     //track slf for syn type objects
     bool isSlf = false, slfOk = false;
@@ -113,7 +150,7 @@ class TsrctCommonOps {
 
     pc.RSAPublicKey? currentPublicKey = publicKeyFromKeyTdoc(keyTdoc);
     if(currentPublicKey != null) {
-      Uint8List bodyBytes = Uint8List.fromList(tsrctDoc.bodyBase64.codeUnits);
+      Uint8List bodyBytes = Uint8List.fromList(utf8.encode(tsrctDoc.bodyBase64));
 
       String calculatedSha = sha256Digest(bodyBytes);
       String providedSha = tsrctDoc.header["sha"];
