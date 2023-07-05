@@ -7,10 +7,10 @@ environment:
   sdk: '>=2.19.6 <3.0.0'
 
 dependencies:
-  googleapis: ^10.1.0
-  googleapis_auth: ^1.4.0
-  pointycastle: ^3.7.2
-  http: ^0.13.5
+  googleapis: ^11.2.0
+  googleapis_auth: ^1.4.1
+  pointycastle: ^3.7.3
+  http: ^1.1.0
   intl: ^0.18.1
 #   path: ^1.8.0
 
