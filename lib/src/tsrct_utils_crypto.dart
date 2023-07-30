@@ -101,4 +101,35 @@ class CryptoUtils {
     return pc.AsymmetricKeyPair<RSAPublicKey, RSAPrivateKey>(myPublic, myPrivate);
   }
 
+  static Uint8List rsaEncrypt(pc.RSAPublicKey publicKey, Uint8List dataToEncrypt) {
+    final encryptor = pc.OAEPEncoding(pc.RSAEngine())
+      ..init(true, pc.PublicKeyParameter<RSAPublicKey>(publicKey)); // true=encrypt
+
+    return _processInBlocks(encryptor, dataToEncrypt);
+  }
+
+  static Uint8List _processInBlocks(pc.AsymmetricBlockCipher engine, Uint8List input) {
+    final numBlocks = input.length ~/ engine.inputBlockSize +
+        ((input.length % engine.inputBlockSize != 0) ? 1 : 0);
+
+    final output = Uint8List(numBlocks * engine.outputBlockSize);
+
+    var inputOffset = 0;
+    var outputOffset = 0;
+    while (inputOffset < input.length) {
+      final chunkSize = (inputOffset + engine.inputBlockSize <= input.length)
+          ? engine.inputBlockSize
+          : input.length - inputOffset;
+
+      outputOffset += engine.processBlock(
+          input, inputOffset, chunkSize, output, outputOffset);
+
+      inputOffset += chunkSize;
+    }
+
+    return (output.length == outputOffset)
+        ? output
+        : output.sublist(0, outputOffset);
+  }
+
 }

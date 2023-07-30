@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:developer' as dev;
 
@@ -9,10 +10,13 @@ import 'package:pointycastle/export.dart' as pc;
 import 'package:tsrct_dart_lib/src/tsrct_codec_utils.dart';
 import 'package:tsrct_dart_lib/src/tsrct_doc.dart';
 import 'package:pointycastle/src/platform_check/platform_check.dart';
+import 'package:tsrct_dart_lib/src/tsrct_key_actions.dart';
 
 class TsrctCommonOps {
   static final DateFormat _keyIdDateFormat = DateFormat("yyyyMMddHHmmss");
-  static final DateFormat _tdocDateFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z");
+  static final DateFormat _tdocDateFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+  static final List<int> chars = "abcdefghijklmnopqrstuvwxyz0123456789".codeUnits;
+  static final Random _random = Random.secure();
 
   static String getNowAsTdocDateFormat() {
     return _tdocDateFormat.format(DateTime.now().toUtc());
@@ -32,6 +36,14 @@ class TsrctCommonOps {
 
   static int getNonce() {
     return DateTime.now().toUtc().millisecondsSinceEpoch~/1000;
+  }
+
+  static String generateUid(String prefix) {
+    List<int> suffix = List.from(getNowAsKeyIdDateFormat().codeUnits, growable: true);
+    for(int i=0; i<8; i++) {
+      suffix.add(chars[_random.nextInt(chars.length)]);
+    }
+    return "$prefix.${String.fromCharCodes(suffix)}";
   }
 
   /// takes a single jwk entry in the keys jwks to create the public key
@@ -183,6 +195,66 @@ class TsrctCommonOps {
     return ValidationResult(shaOk: shaOk, sigOk: sigOk, hbsOk: hbsOk, slfOk: slfOk, isSlf: isSlf, errorMessage: errorMessage);
   }
 
+  static Map<String,dynamic> buildCommonHeader(Map<String,dynamic>? properties) {
+    Map<String,dynamic> header = {
+    };
+    if(properties != null) {
+      header.addAll(properties);
+    }
+    return header;
+  }
+
+  /// given a tsrct doc with a complete header
+  /// appends the signature based on the signing key resource
+  static Future<TsrctDoc> buildTsrctDoc(
+      Map<String,dynamic> header,
+      String bodyBase64,
+      String sigResourceName,
+      KeyActionsProvider keyActionsProvider,
+  ) async {
+    TsrctDoc tsrctDoc = TsrctDoc.init(header, bodyBase64);
+    Uint8List signable = tsrctDoc.generateSignableBytes();
+    String signature = await keyActionsProvider.sign(sigResourceName, signable);
+    tsrctDoc.hbsBase64 = signature;
+    return tsrctDoc;
+  }
+
+  /// adds alg, its, len, nce, sig, sha,
+  /// if includeslf is true, then slf is added and set to the value of sig
+  static Future<TsrctDoc> buildSignedTsrctDoc(
+      Map<String,dynamic> header,
+      bool includeSlf,
+      String bodyBase64,
+      String sigResourceName,
+      KeyActionsProvider keyActionsProvider,
+  ) async {
+    Uint8List bodyBase64Bytes = Uint8List.fromList(utf8.encode(bodyBase64));
+    String sig = await keyActionsProvider.sign(sigResourceName, bodyBase64Bytes);
+    String sha = TsrctCommonOps.sha256Digest(bodyBase64Bytes);
+
+    Map<String,dynamic> addedProperties = {
+      "alg": "RS256",
+      "sig": sig,
+      "sha": sha,
+      "its": getNowAsTdocDateFormat(),
+      "len": bodyBase64.length,
+      "nce": getNonce(),
+    };
+    header.addAll(addedProperties);
+    if(includeSlf) {
+      header["slf"] = sig;
+    }
+    TsrctDoc tsrctDoc =
+      await buildTsrctDoc(
+          header,
+          bodyBase64,
+          sigResourceName,
+          keyActionsProvider
+      );
+    return tsrctDoc;
+  }
+
+
 }
 
 class ValidationResult {
@@ -205,5 +277,11 @@ class ValidationResult {
     required this.hbsOk,
     this.errorMessage,
   });
+
+  @override
+  String toString() {
+    return 'ValidationResult{isSlf: $isSlf, slfOk: $slfOk, shaOk: $shaOk, sigOk: $sigOk, hbsOk: $hbsOk, errorMessage: $errorMessage}';
+  }
+
 
 }

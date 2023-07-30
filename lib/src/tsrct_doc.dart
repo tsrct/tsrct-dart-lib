@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:tsrct_dart_lib/src/tsrct_codec_utils.dart';
+import 'package:tsrct_dart_lib/src/tsrct_operations.dart';
 
 class TsrctDoc {
   late Map<String,dynamic> header;

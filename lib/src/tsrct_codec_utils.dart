@@ -49,3 +49,7 @@ String convertJsonToBase64(Map<String,dynamic> input) {
   String inputString = jsonEncode(input);
   return base64UrlEncode(Uint8List.fromList(utf8.encode(inputString)));
 }
+
+String convertStringToBase64(String inputString) {
+  return base64UrlEncode(Uint8List.fromList(utf8.encode(inputString)));
+}

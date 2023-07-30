@@ -33,10 +33,10 @@ class TsrctApi {
   }
 
   /// given a list of comma delimited uids, get the ref package for each id
-  /// these are the uids in the list of refs included in a header
+  /// these are the uids in the list of refs to be included in a header
   /// the information returned will be used to validate the content of the header ref entries
   Future<ApiResponse> getRefs(String idList) async {
-    http.Response response = await http.get(Uri.parse("$apiEndpoint/d/ref?ids=$idList"));
+    http.Response response = await http.get(Uri.parse("$apiEndpoint/d/ref?uids=$idList"));
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
     return apiResponse;
   }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:googleapis/cloudkms/v1.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
@@ -111,6 +112,24 @@ class GCPUtils {
       );
     AsymmetricSignResponse response = await keyResource.asymmetricSign(request, sigResourceName);
     return base64UrlConform(response.signature!);
+  }
+
+  Future<String> decrypt(
+      String encResourceName,
+      String base64EncodedCipherText,
+      ) async {
+    CloudKMSApi kmsApi = CloudKMSApi(_client);
+    ProjectsResource projectsResource = kmsApi.projects;
+    print('>> >> projectsResource: $projectsResource');
+    ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsResource keyResource =
+        projectsResource.locations.keyRings.cryptoKeys.cryptoKeyVersions;
+    print(">> >> locations resource: $keyResource");
+
+    AsymmetricDecryptRequest request =
+      AsymmetricDecryptRequest(ciphertext: base64EncodedCipherText);
+
+    AsymmetricDecryptResponse response = await keyResource.asymmetricDecrypt(request, encResourceName);
+    return base64UrlConform(response.plaintext!);
   }
 
   void close() {
