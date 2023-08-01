@@ -1,6 +1,6 @@
 name: tsrct_dart_lib
 description: library for common tsrct constructs
-version: 1.0.2
+version: 1.0.3
 repository: https://github.com/tsrct/tsrct-dart-lib
 
 environment:
