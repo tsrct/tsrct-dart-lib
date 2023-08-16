@@ -55,6 +55,12 @@ class TsrctApi {
     return apiResponse;
   }
 
+  Future<ApiResponse> getDdxForTgt(String uid) async {
+    http.Response response = await http.get(Uri.parse("$apiEndpoint/ddx/list/$uid"));
+    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
+
   Future<ApiResponse> postTdoc(String tdoc) async {
     http.Response response = await http.post(
       Uri.parse("$apiEndpoint"),
