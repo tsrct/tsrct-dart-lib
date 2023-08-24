@@ -55,6 +55,7 @@ class TsrctDoc {
   TsrctDoc._internal();
 
   Uint8List generateSignableBytes() {
+    headerBase64 = convertJsonToBase64(header);
     return Uint8List.fromList(utf8.encode("$headerBase64.$bodyBase64"));
   }
 
