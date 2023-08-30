@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import 'package:pointycastle/src/utils.dart';
 import 'package:pointycastle/export.dart' as pc;
+import 'package:tsrct_dart_lib/src/tsrct_api.dart';
 import 'package:tsrct_dart_lib/src/tsrct_codec_utils.dart';
 import 'package:tsrct_dart_lib/src/tsrct_doc.dart';
 import 'package:pointycastle/src/platform_check/platform_check.dart';
@@ -195,6 +196,97 @@ class TsrctCommonOps {
     return ValidationResult(shaOk: shaOk, sigOk: sigOk, hbsOk: hbsOk, slfOk: slfOk, isSlf: isSlf, errorMessage: errorMessage);
   }
 
+  static Future<DdxValidationResult> validateDdx(
+      Map<String,dynamic> ddx,
+      DdxValidationEventListener? listener,
+      TsrctApi tsrctApi,
+      ) async {
+    bool ddxOk = false;
+    bool reqOk = false;
+    bool resOk = false;
+    bool srcOk = false;
+    bool tgtOk = false;
+    bool itsOk = false;
+
+    String uid = ddx["uid"];
+    Map<String,dynamic> req = ddx["req"];
+    Map<String,dynamic> res = ddx["res"];
+
+    listener?.handleDdxValidationEvent(DdxValidationEvent.ddxInfoRequested);
+    TsrctDoc? ddxDoc = await getTsrctDocByUid(uid, tsrctApi);
+    listener?.handleDdxValidationEvent(DdxValidationEvent.ddxInfoReceived);
+    if(ddxDoc == null) {
+      var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+      listener?.handleDdxValidationResult(result);
+      return result;
+    }
+    ddxOk = ddxDoc.header["tgt"] == req["src"];
+    if(!ddxOk) {
+      var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+      listener?.handleDdxValidationResult(result);
+      return result;
+    }
+    else {
+      srcOk = true;
+      tgtOk = true;
+    }
+
+    String reqKey = req["key"];
+    listener?.handleDdxValidationEvent(DdxValidationEvent.reqKeyRequested);
+    TsrctDoc? reqKeyDoc = await getTsrctDocByUid(reqKey, tsrctApi);
+    listener?.handleDdxValidationEvent(DdxValidationEvent.reqKeyReceived);
+    if(reqKeyDoc == null) {
+      var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+      listener?.handleDdxValidationResult(result);
+      return result;
+    }
+
+    pc.RSAPublicKey? reqPublicKey = publicKeyFromKeyTdoc(reqKeyDoc);
+    Uint8List reqVal = Uint8List.fromList(utf8.encode(req["val"]));
+    Uint8List reqSig = base64UrlDecode(req["sig"]);
+    reqOk = validateSignature(reqPublicKey!, reqVal, reqSig);
+    if(!reqOk) {
+      var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+      listener?.handleDdxValidationResult(result);
+      return result;
+    }
+    listener?.handleDdxValidationEvent(DdxValidationEvent.reqValidated);
+
+    pc.RSAPublicKey? ddxPublicKey = publicKeyFromKeyTdoc(ddxDoc);
+    Uint8List resVal = Uint8List.fromList(utf8.encode(res["val"]));
+    Uint8List resSig = base64UrlDecode(res["sig"]);
+    resOk = validateSignature(ddxPublicKey!, resVal, resSig);
+    if(!resOk) {
+      var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+      listener?.handleDdxValidationResult(result);
+      return result;
+    }
+    listener?.handleDdxValidationEvent(DdxValidationEvent.resValidated);
+
+    bool itsIsAppended = "${req['val']}&its=${res['its']}" == res['val'];
+    int reqNce = req["nce"];
+    DateTime resIts = DateTime.parse(res["its"]);
+    int resNce = resIts.millisecondsSinceEpoch ~/ 1000;
+    bool itsIsTimely = (resNce >= reqNce) && (resNce <= reqNce + 10);
+    itsOk = itsIsAppended && itsIsTimely;
+    if(itsOk) {
+      listener?.handleDdxValidationEvent(DdxValidationEvent.itsValidated);
+    }
+
+    var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+    listener?.handleDdxValidationResult(result);
+    return result;
+  }
+
+  static Future<TsrctDoc?> getTsrctDocByUid(String uid, TsrctApi tsrctApi) async {
+    ApiResponse response = await tsrctApi.getTdocByUid(uid);
+    if(response.ok && response.tdoc != null) {
+      TsrctDoc tsrctDoc = TsrctDoc.parse(response.tdoc!);
+      return tsrctDoc;
+    }
+    return null;
+  }
+
   static Map<String,dynamic> buildCommonHeader(Map<String,dynamic>? properties) {
     Map<String,dynamic> header = {
     };
@@ -284,4 +376,56 @@ class ValidationResult {
   }
 
 
+}
+
+class DdxValidationResult {
+  final String uid;
+  final bool ddxOk;
+  final bool reqOk;
+  final bool resOk;
+  final bool srcOk;
+  final bool tgtOk;
+  final bool itsOk;
+
+  final String? errorMessage;
+
+  bool get ok => ddxOk && reqOk && resOk && srcOk && tgtOk && itsOk;
+
+  const DdxValidationResult({
+    required this.uid,
+    required this.ddxOk,
+    required this.reqOk,
+    required this.resOk,
+    required this.srcOk,
+    required this.tgtOk,
+    required this.itsOk,
+    this.errorMessage,
+  });
+
+  Map<String,dynamic> toJson() {
+    return {
+      "reqOk": reqOk,
+      "resOk": resOk,
+      "srcOk": srcOk,
+      "tgtOk": tgtOk,
+      "itsOk": itsOk,
+      "ok": ok,
+      "errorMessage": errorMessage ?? "",
+    };
+  }
+}
+
+abstract class DdxValidationEventListener {
+  void handleDdxValidationEvent(DdxValidationEvent event);
+  void handleDdxValidationResult(DdxValidationResult result);
+}
+
+enum DdxValidationEvent {
+  ddxInfoRequested,
+  ddxInfoReceived,
+  reqKeyRequested,
+  reqKeyReceived,
+  reqValidated,
+  resValidated,
+  itsValidated,
 }

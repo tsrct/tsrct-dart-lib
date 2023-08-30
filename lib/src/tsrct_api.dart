@@ -61,10 +61,42 @@ class TsrctApi {
     return apiResponse;
   }
 
+  /// given a ddx uid, get the summary info for the item, incl src domain data
+  Future<ApiResponse> getDdxInfoForUid(String uid) async {
+    http.Response response = await http.get(Uri.parse("$apiEndpoint/ddx/info/$uid"));
+    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
+
+  Future<ApiResponse> getTdocsForSrc(String uid, String? cursor) async {
+    http.Response response = await http.get(Uri.parse("$apiEndpoint/d/tdocs?src=$uid${cursor==null?'':'&cursor=$cursor'}"));
+    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
+
+
   Future<ApiResponse> postTdoc(String tdoc) async {
     http.Response response = await http.post(
       Uri.parse("$apiEndpoint"),
       body: tdoc,
+      encoding: utf8,
+    );
+    ApiResponse apiResponse = ApiResponse.parse(
+        response.statusCode,
+        ApiResponseType.json,
+        "application/json",
+        response.bodyBytes
+    );
+    return apiResponse;
+  }
+
+  Future<ApiResponse> postTdocToPath(String path, String tdoc) async {
+    http.Response response = await http.post(
+      Uri.parse("$apiEndpoint$path"),
+      body: tdoc,
+      headers: {
+        "content-type": "text/plain",
+      },
       encoding: utf8,
     );
     ApiResponse apiResponse = ApiResponse.parse(
