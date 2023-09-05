@@ -8,6 +8,12 @@ class TsrctApi {
 
   TsrctApi(this.apiEndpoint);
 
+  Future<Map<String,dynamic>> getApiInfo() async {
+    http.Response response = await http.get(Uri.parse("$apiEndpoint/"));
+    Map<String,dynamic> responseMap = json.decode(response.body);
+    return responseMap;
+  }
+
   Future<Map<String,dynamic>> getChecksum(String tempId) async {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/i/checksum/$tempId"));
     Map<String,dynamic> responseMap = json.decode(response.body);
