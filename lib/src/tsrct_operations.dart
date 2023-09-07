@@ -200,6 +200,8 @@ class TsrctCommonOps {
       Map<String,dynamic> ddx,
       DdxValidationEventListener? listener,
       TsrctApi tsrctApi,
+      Map<String,dynamic> header,
+      ValidationResult validationResult,
       ) async {
     bool ddxOk = false;
     bool reqOk = false;
@@ -211,6 +213,20 @@ class TsrctCommonOps {
     String uid = ddx["uid"];
     Map<String,dynamic> req = ddx["req"];
     Map<String,dynamic> res = ddx["res"];
+
+    //first do a sanity check of the value so a bad ddx can be failed quickly
+    Map<String,String> reqValMap = _parseDdxVal(req["val"]);
+    Map<String,String> resValMap = _parseDdxVal(res["val"]);
+    bool validationSigOk = reqValMap["sig"] == resValMap["sig"] && reqValMap["sig"] == header["sig"] && validationResult.sigOk;
+    bool validationShaOk = reqValMap["sha"] == resValMap["sha"] && reqValMap["sha"] == header["sha"] && validationResult.shaOk;
+
+    if(!validationShaOk || !validationSigOk) {
+      var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
+      listener?.handleDdxValidationResult(result);
+      return result;
+    }
+
+    //sanity check successful, proceed with other items:
 
     listener?.handleDdxValidationEvent(DdxValidationEvent.ddxInfoRequested);
     TsrctDoc? ddxDoc = await getTsrctDocByUid(uid, tsrctApi);
@@ -265,9 +281,10 @@ class TsrctCommonOps {
 
     bool itsIsAppended = "${req['val']}&its=${res['its']}" == res['val'];
     int reqNce = req["nce"];
+    int valNce = int.parse(reqValMap["nce"]!);
     DateTime resIts = DateTime.parse(res["its"]);
     int resNce = resIts.millisecondsSinceEpoch ~/ 1000;
-    bool itsIsTimely = (resNce >= reqNce) && (resNce <= reqNce + 10);
+    bool itsIsTimely = reqNce == valNce && (resNce >= reqNce) && (resNce <= reqNce + 10);
     itsOk = itsIsAppended && itsIsTimely;
     if(itsOk) {
       listener?.handleDdxValidationEvent(DdxValidationEvent.itsValidated);
@@ -276,6 +293,17 @@ class TsrctCommonOps {
     var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
     listener?.handleDdxValidationResult(result);
     return result;
+  }
+
+  static Map<String,String> _parseDdxVal(String val) {
+    Map<String,String> valMap = {};
+    List<String> entires = val.split("&");
+    for (String entry in entires) {
+      List<String> pair = entry.split("=");
+      valMap[pair[0]] = pair[1];
+    }
+
+    return valMap;
   }
 
   static Future<TsrctDoc?> getTsrctDocByUid(String uid, TsrctApi tsrctApi) async {
