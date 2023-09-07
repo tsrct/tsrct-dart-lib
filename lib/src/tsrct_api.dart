@@ -26,6 +26,12 @@ class TsrctApi {
     return responseMap;
   }
 
+  Future<ApiResponse> getHeaderByUid(String uid) async {
+    http.Response response = await http.get(Uri.parse("$apiEndpoint/$uid"));
+    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
+
   Future<ApiResponse> getTdocByUid(String uid) async {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/$uid/tdoc"));
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.tdoc, "text/plain", response.bodyBytes);
