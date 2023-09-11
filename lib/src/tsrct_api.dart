@@ -20,7 +20,7 @@ class TsrctApi {
     return responseMap;
   }
 
-  Future<Map<String,dynamic>> getTidExists(String tempId) async {
+  Future<Map<String,dynamic>> getUidExists(String tempId) async {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/i/exists/$tempId"));
     Map<String,dynamic> responseMap = json.decode(response.body);
     return responseMap;
