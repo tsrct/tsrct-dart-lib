@@ -173,10 +173,15 @@ class TsrctCommonOps {
       }
       if(tsrctDoc.header["slf"] != null) {
         isSlf = true;
-        Uint8List slfBytes = base64UrlDecode(tsrctDoc.header["slf"]);
+        String slf = tsrctDoc.header["slf"];
+        Uint8List slfBytes = base64UrlDecode(slf);
         slfOk = validateSignature(currentPublicKey, bodyBytes, slfBytes);
         if(!slfOk) {
           errorMessage += "slf not ok;";
+        }
+        if(tsrctDoc.header["sig"] != null) {
+          String sig = tsrctDoc.header["sig"];
+          sigOk = sig == slf;
         }
       }
       else {
