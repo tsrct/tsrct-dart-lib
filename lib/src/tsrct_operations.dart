@@ -175,22 +175,24 @@ class TsrctCommonOps {
         isSlf = true;
         String slf = tsrctDoc.header["slf"];
         Uint8List slfBytes = base64UrlDecode(slf);
-        slfOk = validateSignature(currentPublicKey, bodyBytes, slfBytes);
+        pc.RSAPublicKey slfValidationKey = publicKeyFromKeyTdoc(tsrctDoc)!;
+        slfOk = validateSignature(slfValidationKey, bodyBytes, slfBytes);
         if(!slfOk) {
           errorMessage += "slf not ok;";
         }
-        if(tsrctDoc.header["sig"] != null) {
-          String sig = tsrctDoc.header["sig"];
-          sigOk = sig == slf;
-        }
+        // if(tsrctDoc.header["sig"] != null) {
+        //   String sig = tsrctDoc.header["sig"];
+        //   sigOk = sig == slf;
+        // }
       }
-      else {
-        Uint8List sigBytes = base64UrlDecode(tsrctDoc.header["sig"]);
-        sigOk = validateSignature(currentPublicKey, bodyBytes, sigBytes);
-        if(!sigOk) {
-          errorMessage += "sig not ok;";
-        }
+
+      // validate sig
+      Uint8List sigBytes = base64UrlDecode(tsrctDoc.header["sig"]);
+      sigOk = validateSignature(currentPublicKey, bodyBytes, sigBytes);
+      if(!sigOk) {
+        errorMessage += "sig not ok;";
       }
+
       Uint8List hbsBytes = base64UrlDecode(tsrctDoc.hbsBase64);
       hbsOk = validateSignature(currentPublicKey, tsrctDoc.generateSignableBytes(), hbsBytes);
       if(!hbsOk) {
