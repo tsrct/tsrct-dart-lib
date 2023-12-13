@@ -86,32 +86,32 @@ abstract class KeyActionsProvider {
     Uint8List modBytes = encodeBigInt(publicKey.modulus);
 
     String expStr = base64UrlEncode(expBytes);
-    publicJwk['exp'] = expStr;
+    publicJwk['e'] = expStr;
 
     String modStr = base64UrlEncode(modBytes);
-    publicJwk['mod'] = modStr;
+    publicJwk['n'] = modStr;
 
     return publicJwk;
   }
 
   Map<String,dynamic> _privateKeyToJwk(pc.RSAPrivateKey privateKey) {
-    Map<String,dynamic> publicJwk = {};
-    publicJwk["kty"] = "RSA";
-    publicJwk["alg"] = "RS256";
-    publicJwk["use"] = "sig";
-    publicJwk["typ"] = "private";
+    Map<String,dynamic> privateJwk = {};
+    privateJwk["kty"] = "RSA";
+    privateJwk["alg"] = "RS256";
+    privateJwk["use"] = "sig";
+    privateJwk["typ"] = "private";
 
     Uint8List expBytes = encodeBigInt(privateKey.privateExponent);
     Uint8List modBytes = encodeBigInt(privateKey.modulus);
     Uint8List pBytes = encodeBigInt(privateKey.p);
     Uint8List qBytes = encodeBigInt(privateKey.q);
 
-    publicJwk['exp'] = base64UrlEncode(expBytes);
-    publicJwk['mod'] = base64UrlEncode(modBytes);
-    publicJwk["p"]   = base64UrlEncode(pBytes);
-    publicJwk["q"]   = base64UrlEncode(qBytes);
+    privateJwk['d'] = base64UrlEncode(expBytes);
+    privateJwk['n'] = base64UrlEncode(modBytes);
+    privateJwk["p"] = base64UrlEncode(pBytes);
+    privateJwk["q"] = base64UrlEncode(qBytes);
 
-    return publicJwk;
+    return privateJwk;
   }
 
 

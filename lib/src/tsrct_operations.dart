@@ -49,11 +49,11 @@ class TsrctCommonOps {
 
   /// takes a single jwk entry in the keys jwks to create the public key
   static pc.RSAPublicKey jwkToPublicKey(Map<String,dynamic> jwk) {
-    String expStrBase64 = jwk['exp'];
+    String expStrBase64 = jwk['e'];
     Uint8List expBytes = base64UrlDecode(expStrBase64);
     BigInt exp = decodeBigInt(expBytes);
 
-    String modStrBase64 = jwk['mod'];
+    String modStrBase64 = jwk['n'];
     Uint8List modbytes = base64UrlDecode(modStrBase64);
     BigInt mod = decodeBigInt(modbytes);
 
@@ -113,10 +113,10 @@ class TsrctCommonOps {
     dev.log("public modulus: ${publicKey.modulus}");
 
     String expStr = base64UrlEncode(expBytes);
-    publicJwk['exp'] = expStr;
+    publicJwk['e'] = expStr;
 
     String modStr = base64UrlEncode(modBytes);
-    publicJwk['mod'] = modStr;
+    publicJwk['n'] = modStr;
 
     return publicJwk;
   }
@@ -463,4 +463,8 @@ enum DdxValidationEvent {
   reqValidated,
   resValidated,
   itsValidated,
+}
+
+abstract class JwtProvider {
+  String generateJwt(String actionName);
 }

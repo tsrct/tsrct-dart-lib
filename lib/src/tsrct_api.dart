@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:tsrct_dart_lib/src/tsrct_operations.dart';
 
 class TsrctApi {
   final String apiEndpoint;
@@ -86,6 +87,25 @@ class TsrctApi {
     return apiResponse;
   }
 
+  Future<ApiResponse> getDdxBadgesForTgt(JwtProvider jwtProvider, String? cursor) async {
+    return await getJwtAction(jwtProvider, "/services/ddx/badges", cursor);
+  }
+
+  Future<ApiResponse> getJwtAction(
+      JwtProvider jwtProvider,
+      String action,
+      String? cursor,
+  ) async {
+    String jwt = jwtProvider.generateJwt("GET:$action");
+    http.Response response = await http.get(
+      Uri.parse("$apiEndpoint$action${cursor==null?'':'?cursor=$cursor'}"),
+      headers: {
+          "x-tsrct-auth": jwt,
+      },
+    );
+    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
 
   Future<ApiResponse> postTdoc(String tdoc) async {
     http.Response response = await http.post(

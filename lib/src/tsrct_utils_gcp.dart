@@ -60,10 +60,10 @@ class GCPUtils {
     Uint8List modBytes = encodeBigInt(rsaPublicKey.modulus);
 
     String expStr = base64UrlEncode(expBytes);
-    publicJwk['exp'] = expStr;
+    publicJwk['e'] = expStr;
 
     String modStr = base64UrlEncode(modBytes);
-    publicJwk['mod'] = modStr;
+    publicJwk['n'] = modStr;
 
     return publicJwk;
   }
