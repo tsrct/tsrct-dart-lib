@@ -68,6 +68,7 @@ class TsrctApi {
     return apiResponse;
   }
 
+  /// given a uid, get the publicly available ddx items where this uid is the tgt of the ddx
   Future<ApiResponse> getDdxForTgt(String uid) async {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/ddx/list/$uid"));
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
@@ -85,10 +86,6 @@ class TsrctApi {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/d/tdocs?src=$uid${cursor==null?'':'&cursor=$cursor'}"));
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
     return apiResponse;
-  }
-
-  Future<ApiResponse> getDdxBadgesForTgt(JwtProvider jwtProvider, String? cursor) async {
-    return await getJwtAction(jwtProvider, "/services/ddx/badges", cursor);
   }
 
   Future<ApiResponse> getJwtAction(
