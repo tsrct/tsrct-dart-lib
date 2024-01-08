@@ -291,7 +291,7 @@ class TsrctCommonOps {
     int valNce = int.parse(reqValMap["nce"]!);
     DateTime resIts = DateTime.parse(res["its"]);
     int resNce = resIts.millisecondsSinceEpoch ~/ 1000;
-    bool itsIsTimely = reqNce == valNce && (resNce >= reqNce) && (resNce <= reqNce + 10);
+    bool itsIsTimely = (reqNce == valNce) && ((reqNce - resNce).abs() <=10);
     itsOk = itsIsAppended && itsIsTimely;
     if(itsOk) {
       listener?.handleDdxValidationEvent(DdxValidationEvent.itsValidated);
