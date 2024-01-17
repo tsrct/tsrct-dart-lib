@@ -163,7 +163,7 @@ class TsrctCommonOps {
 
     pc.RSAPublicKey? currentPublicKey = publicKeyFromKeyTdoc(keyTdoc);
     if(currentPublicKey != null) {
-      Uint8List bodyBytes = Uint8List.fromList(utf8.encode(tsrctDoc.bodyBase64));
+      Uint8List bodyBytes = convertStringToBytes(tsrctDoc.bodyBase64); //Uint8List.fromList(utf8.encode(tsrctDoc.bodyBase64));
 
       String calculatedSha = sha256Digest(bodyBytes);
       String providedSha = tsrctDoc.header["sha"];
@@ -265,7 +265,7 @@ class TsrctCommonOps {
     }
 
     pc.RSAPublicKey? reqPublicKey = publicKeyFromKeyTdoc(reqKeyDoc);
-    Uint8List reqVal = Uint8List.fromList(utf8.encode(req["val"]));
+    Uint8List reqVal = convertStringToBytes(req["val"]); // Uint8List.fromList(utf8.encode(req["val"]));
     Uint8List reqSig = base64UrlDecode(req["sig"]);
     reqOk = validateSignature(reqPublicKey!, reqVal, reqSig);
     if(!reqOk) {
@@ -276,9 +276,11 @@ class TsrctCommonOps {
     listener?.handleDdxValidationEvent(DdxValidationEvent.reqValidated);
 
     pc.RSAPublicKey? ddxPublicKey = publicKeyFromKeyTdoc(ddxDoc);
-    Uint8List resVal = Uint8List.fromList(utf8.encode(res["val"]));
+    Uint8List resVal = convertStringToBytes(res["val"]); // Uint8List.fromList(utf8.encode(res["val"]));
     Uint8List resSig = base64UrlDecode(res["sig"]);
-    resOk = validateSignature(ddxPublicKey!, resVal, resSig);
+    bool resShaOk = TsrctCommonOps.sha256Digest(resVal) == res["sha"];
+    bool resSigOk = validateSignature(ddxPublicKey!, resVal, resSig);
+    resOk = resShaOk && resSigOk;
     if(!resOk) {
       var result = DdxValidationResult(uid: uid, ddxOk: ddxOk, reqOk: reqOk, resOk: resOk, srcOk: srcOk, tgtOk: tgtOk, itsOk: itsOk);
       listener?.handleDdxValidationResult(result);
@@ -341,7 +343,8 @@ class TsrctCommonOps {
   ) async {
     TsrctDoc tsrctDoc = TsrctDoc.init(header, bodyBase64);
     Uint8List signable = tsrctDoc.generateSignableBytes();
-    String signature = await keyActionsProvider.sign(sigResourceName, signable);
+    String sha = TsrctCommonOps.sha256Digest(signable);
+    String signature = await keyActionsProvider.signDigest(sigResourceName, base64UrlDecode(sha));
     tsrctDoc.hbsBase64 = signature;
     return tsrctDoc;
   }
@@ -356,8 +359,8 @@ class TsrctCommonOps {
       KeyActionsProvider keyActionsProvider,
   ) async {
     Uint8List bodyBase64Bytes = Uint8List.fromList(utf8.encode(bodyBase64));
-    String sig = await keyActionsProvider.sign(sigResourceName, bodyBase64Bytes);
     String sha = TsrctCommonOps.sha256Digest(bodyBase64Bytes);
+    String sig = await keyActionsProvider.signDigest(sigResourceName, base64UrlDecode(sha));
 
     Map<String,dynamic> addedProperties = {
       "alg": "RS256",

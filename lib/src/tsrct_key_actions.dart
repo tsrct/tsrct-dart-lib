@@ -23,9 +23,9 @@ abstract class KeyActionsProvider {
     String resourceName,
   );
 
-  /// sign the [bytes] payload given the resource address of the signing private key
+  /// sign the [bytes] that are the digest of the actual payload given the resource address of the signing private key
   /// return the answer as base64 encoded with trailing '=' trimmed
-  Future<String> sign(String sigKeyResource, Uint8List bytes);
+  Future<String> signDigest(String sigKeyResource, Uint8List bytes);
 
   /// generate a base64 encoded AES128 key that can be used for encryption
   Future<String> generateAES128();
@@ -205,8 +205,8 @@ class GCPKeyActionsProvider extends KeyActionsProvider {
   }
 
   @override
-  Future<String> sign(String sigKeyResource, Uint8List bytes) async {
-    return await _gcpUtils.sign(sigKeyResource, bytes);
+  Future<String> signDigest(String sigKeyResource, Uint8List bytes) async {
+    return await _gcpUtils.signDigest(sigKeyResource, bytes);
   }
 
   @override
@@ -268,7 +268,7 @@ class LocalKeyActionsProvider extends KeyActionsProvider {
   }
 
   @override
-  Future<String> sign(String sigKeyResource, Uint8List bytes) {
+  Future<String> signDigest(String sigKeyResource, Uint8List bytes) {
     // TODO: implement sign
     throw UnimplementedError();
   }

@@ -17,6 +17,7 @@ String base64UrlConform(String badBase64) {
   return badBase64.replaceAll('/', '_').replaceAll('+', '-').replaceAll('=', '');
 }
 
+
 /// padding fixing is important since tsrct uses unpadded base64
 /// and dart standard libs insist on padding
 String base64FixPadding(String input) {
@@ -52,4 +53,8 @@ String convertJsonToBase64(Map<String,dynamic> input) {
 
 String convertStringToBase64(String inputString) {
   return base64UrlEncode(Uint8List.fromList(utf8.encode(inputString)));
+}
+
+Uint8List convertStringToBytes(String base64) {
+  return Uint8List.fromList(utf8.encode(base64));
 }

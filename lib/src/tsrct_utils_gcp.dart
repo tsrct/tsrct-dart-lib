@@ -94,21 +94,19 @@ class GCPUtils {
   }
 
   /// sign and return an unpadded base64 signature
-  Future<String> sign(
+  Future<String> signDigest(
       String sigResourceName,
       Uint8List bytesToSign,
       ) async {
     CloudKMSApi kmsApi = CloudKMSApi(_client);
     ProjectsResource projectsResource = kmsApi.projects;
-    print('>> >> projectsResource: $projectsResource');
     ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsResource keyResource =
         projectsResource.locations.keyRings.cryptoKeys.cryptoKeyVersions;
-    print(">> >> locations resource: $keyResource");
 
     String inputBase64 = base64UrlEncode(bytesToSign);
     AsymmetricSignRequest request =
       AsymmetricSignRequest(
-        data: inputBase64
+        digest: Digest(sha256: inputBase64),
       );
     AsymmetricSignResponse response = await keyResource.asymmetricSign(request, sigResourceName);
     return base64UrlConform(response.signature!);
@@ -120,10 +118,8 @@ class GCPUtils {
       ) async {
     CloudKMSApi kmsApi = CloudKMSApi(_client);
     ProjectsResource projectsResource = kmsApi.projects;
-    print('>> >> projectsResource: $projectsResource');
     ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsResource keyResource =
         projectsResource.locations.keyRings.cryptoKeys.cryptoKeyVersions;
-    print(">> >> locations resource: $keyResource");
 
     AsymmetricDecryptRequest request =
       AsymmetricDecryptRequest(ciphertext: base64EncodedCipherText);
