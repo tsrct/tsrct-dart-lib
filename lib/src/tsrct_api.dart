@@ -104,6 +104,25 @@ class TsrctApi {
     return apiResponse;
   }
 
+  Future<ApiResponse> postJwtAction(
+      JwtProvider jwtProvider,
+      String action,
+      String contentType,
+      Map<String,dynamic> content,
+      ) async {
+    String jwt = jwtProvider.generateJwt("POST:$action");
+    http.Response response = await http.post(
+      Uri.parse("$apiEndpoint$action"),
+      headers: {
+        "x-tsrct-auth": jwt,
+      },
+      body: jsonEncode(content),
+      encoding: utf8,
+    );
+    ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
+
   Future<ApiResponse> postTdoc(String tdoc) async {
     http.Response response = await http.post(
       Uri.parse("$apiEndpoint"),
