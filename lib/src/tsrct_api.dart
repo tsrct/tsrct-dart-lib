@@ -114,6 +114,7 @@ class TsrctApi {
     http.Response response = await http.post(
       Uri.parse("$apiEndpoint$action"),
       headers: {
+        "content-type": contentType,
         "x-tsrct-auth": jwt,
       },
       body: jsonEncode(content),

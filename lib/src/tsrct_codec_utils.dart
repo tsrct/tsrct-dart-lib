@@ -58,3 +58,7 @@ String convertStringToBase64(String inputString) {
 Uint8List convertStringToBytes(String base64) {
   return Uint8List.fromList(utf8.encode(base64));
 }
+
+String convertBytesToString(Uint8List bytes) {
+  return utf8.decode(bytes);
+}
