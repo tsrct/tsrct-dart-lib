@@ -471,3 +471,9 @@ enum DdxValidationEvent {
 abstract class JwtProvider {
   String generateJwt(String actionName);
 }
+
+class TxnContext {
+  final String tsrctId;
+
+  TxnContext({required this.tsrctId});
+}

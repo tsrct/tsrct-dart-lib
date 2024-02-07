@@ -109,14 +109,14 @@ class TsrctApi {
       String action,
       String contentType,
       Map<String,dynamic> content,
+      Map<String,String> headers,
       ) async {
     String jwt = jwtProvider.generateJwt("POST:$action");
+    headers["content-type"] = contentType;
+    headers["x-tsrct-auth"] = jwt;
     http.Response response = await http.post(
       Uri.parse("$apiEndpoint$action"),
-      headers: {
-        "content-type": contentType,
-        "x-tsrct-auth": jwt,
-      },
+      headers: headers,
       body: jsonEncode(content),
       encoding: utf8,
     );
