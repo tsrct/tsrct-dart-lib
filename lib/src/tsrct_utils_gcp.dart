@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as dev;
 import 'dart:typed_data';
 import 'package:googleapis/cloudkms/v1.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
@@ -38,11 +39,11 @@ class GCPUtils {
   Future<void> _init() async {
     try {
       _client = await auth.clientViaMetadataServer();
-      print("metadata client is: $_client");
+      dev.log("metadata client is: $_client");
     } catch (e) {
-      print(">> authing app def client");
+      dev.log(">> authing app def client");
       _client = await auth.clientViaApplicationDefaultCredentials(scopes: ["https://www.googleapis.com/auth/cloudkms"]);
-      print(">> app def client is: $_client");
+      dev.log(">> app def client is: $_client");
     }
   }
 
@@ -71,7 +72,7 @@ class GCPUtils {
   Future<pc.RSAPublicKey> getPublicKey(String resourceName) async {
     PublicKey publicKey = await _getPublicKey(resourceName);
     Map<String,dynamic> publicKeyJson = publicKey.toJson();
-    print('>> >> public key json: $publicKeyJson');
+    dev.log('>> >> public key json: $publicKeyJson');
 
     pc.RSAPublicKey rsaPublicKey = CryptoUtils.rsaPublicKeyFromPem(publicKey.pem!);
     return rsaPublicKey;
@@ -80,14 +81,14 @@ class GCPUtils {
   Future<PublicKey> _getPublicKey(String resourceName) async {
     CloudKMSApi kmsApi = CloudKMSApi(_client);
     ProjectsResource projectsResource = kmsApi.projects;
-    print('>> >> projectsResource: $projectsResource');
+    dev.log('>> >> projectsResource: $projectsResource');
     ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsResource keyResource =
         projectsResource.locations.keyRings.cryptoKeys.cryptoKeyVersions;
-    print(">> >> locations resource: $keyResource");
+    dev.log(">> >> locations resource: $keyResource");
     CryptoKeyVersion keyVersion = await keyResource.get(resourceName);
-    print('>> >> key version: ${keyVersion.name}');
+    dev.log('>> >> key version: ${keyVersion.name}');
     Map<String,dynamic> keyJson = keyVersion.toJson();
-    print(">> >> key json: $keyJson");
+    dev.log(">> >> key json: $keyJson");
 
     PublicKey publicKey = await keyResource.getPublicKey(keyVersion.name!);
     return publicKey;
