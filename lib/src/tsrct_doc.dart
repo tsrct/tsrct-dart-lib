@@ -68,3 +68,8 @@ class TsrctDoc {
     return "$headerBase64.$bodyBase64";
   }
 }
+
+enum DocAclType {
+  acl_pub,
+  acl_pri,
+}
