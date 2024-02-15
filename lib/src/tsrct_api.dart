@@ -33,10 +33,18 @@ class TsrctApi {
     return apiResponse;
   }
 
+  Future<ApiResponse> getHeaderByUidWithAuth(JwtProvider jwtProvider, String uid) async {
+    return await getJwtAction(jwtProvider, "/$uid", null);
+  }
+
   Future<ApiResponse> getTdocByUid(String uid) async {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/$uid/tdoc"));
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.tdoc, "text/plain", response.bodyBytes);
     return apiResponse;
+  }
+
+  Future<ApiResponse> getTdocByUidWithAuth(JwtProvider jwtProvider, String uid) async {
+    return await getJwtActionForType(jwtProvider, "/$uid/tdoc", ApiResponseType.tdoc, "text/plain");
   }
 
   Future<ApiResponse> getTags(String uid) async {
@@ -82,11 +90,23 @@ class TsrctApi {
     return apiResponse;
   }
 
+  Future<ApiResponse> getDdxInfoForUidWithAuth(JwtProvider jwtProvider, String uid) async {
+    return await getJwtAction(jwtProvider, "/ddx/info/$uid", null);
+  }
+
+/*
   Future<ApiResponse> getTdocsForSrc(String uid, String? cursor) async {
     http.Response response = await http.get(Uri.parse("$apiEndpoint/d/tdocs?src=$uid${cursor==null?'':'&cursor=$cursor'}"));
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
     return apiResponse;
   }
+*/
+
+  Future<ApiResponse> getDocsForSrcWithAuth(JwtProvider jwtProvider, String? cursor) async {
+    ApiResponse apiResponse = await getJwtAction(jwtProvider, "/d/docs/src", cursor);
+    return apiResponse;
+  }
+
 
   Future<ApiResponse> getJwtAction(
       JwtProvider jwtProvider,
@@ -101,6 +121,28 @@ class TsrctApi {
       },
     );
     ApiResponse apiResponse = ApiResponse.parse(response.statusCode, ApiResponseType.json, "application/json", response.bodyBytes);
+    return apiResponse;
+  }
+
+  Future<ApiResponse> getJwtActionForType(
+      JwtProvider jwtProvider,
+      String action,
+      ApiResponseType responseType,
+      String contentType,
+  ) async {
+    String jwt = jwtProvider.generateJwt("GET:$action");
+    http.Response response = await http.get(
+      Uri.parse("$apiEndpoint$action"),
+      headers: {
+          "x-tsrct-auth": jwt,
+      },
+    );
+    ApiResponse apiResponse = ApiResponse.parse(
+        response.statusCode,
+        responseType,
+        contentType,
+        response.bodyBytes,
+    );
     return apiResponse;
   }
 
